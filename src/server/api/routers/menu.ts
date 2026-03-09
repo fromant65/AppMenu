@@ -350,4 +350,26 @@ export const menuRouter = createTRPCRouter({
 
       return { success: true };
     }),
+
+  // -------------------------------------------------------------------------
+  // Eliminar una página individual de un menú
+  // -------------------------------------------------------------------------
+  deletePage: protectedProcedure
+    .input(z.object({ pageId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Verificar propiedad a través del menú
+      const page = await ctx.db.query.menuPages.findFirst({
+        where: eq(menuPages.id, input.pageId),
+        with: { menu: { columns: { userId: true } } },
+      });
+
+      if (!page || page.menu.userId !== userId) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      await ctx.db.delete(menuPages).where(eq(menuPages.id, input.pageId));
+      return { success: true };
+    }),
 });

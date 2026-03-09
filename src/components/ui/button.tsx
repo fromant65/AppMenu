@@ -41,7 +41,7 @@ export function Button({
       disabled={disabled ?? isLoading}
       className={[
         "inline-flex items-center justify-center gap-2 rounded-lg font-medium",
-        "transition-colors focus-visible:outline-none focus-visible:ring-2",
+        "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2",
         "focus-visible:ring-offset-1 disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],

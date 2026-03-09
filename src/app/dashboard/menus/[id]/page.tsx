@@ -38,9 +38,14 @@ export default function EditMenuPage() {
     { enabled: menuId > 0 && menu?.isPublished === true },
   );
 
+  const deletePageMutation = api.menu.deletePage.useMutation({
+    onSuccess: () => void refetch(),
+  });
+
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [showQR, setShowQR] = useState(false);
+  const [confirmDeletePageId, setConfirmDeletePageId] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -238,6 +243,39 @@ export default function EditMenuPage() {
                     Editar precios
                   </Button>
                 </Link>
+                {confirmDeletePageId === page.id ? (
+                  <div className="flex w-full gap-1">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      isLoading={deletePageMutation.isPending}
+                      onClick={() => deletePageMutation.mutate(
+                        { pageId: page.id },
+                        { onSuccess: () => setConfirmDeletePageId(null) },
+                      )}
+                    >
+                      Sí
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={() => setConfirmDeletePageId(null)}
+                    >
+                      No
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-red-500 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => setConfirmDeletePageId(page.id)}
+                  >
+                    Eliminar
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -260,11 +298,7 @@ export default function EditMenuPage() {
         />
       </div>
 
-      {/* Aviso sobre editor de precios */}
-      <div className="mt-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
-        <strong>Próximamente:</strong> Editor de precios — podrás superponer etiquetas
-        de precio sobre las imágenes del menú.
-      </div>
+
     </div>
   );
 }
