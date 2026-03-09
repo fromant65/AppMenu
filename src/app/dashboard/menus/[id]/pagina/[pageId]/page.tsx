@@ -103,7 +103,7 @@ export default function PageEditorPage() {
       {/* Editor */}
       <PriceEditor
         imageUrl={page.imageUrl}
-        initialAnnotations={(page.annotations as PriceAnnotation[]) ?? []}
+        initialAnnotations={page.annotations ?? []}
         onSave={handleSave}
         isSaving={isSaving}
         pageLabel={`Página ${page.pageNumber} de ${menu.pages.length}`}

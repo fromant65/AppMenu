@@ -71,10 +71,9 @@ export const authConfig = {
       if (user) {
         // user.id va en token.sub (campo estandar JWT)
         token.sub = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const u = user as Record<string, unknown>;
-        token["businessSlug"] = u["businessSlug"] as string | null;
-        token["subscriptionStatus"] = u["subscriptionStatus"] as string;
+        token.businessSlug = u.businessSlug as string | null;
+        token.subscriptionStatus = u.subscriptionStatus as string;
       }
       return token;
     },
@@ -84,8 +83,8 @@ export const authConfig = {
         user: {
           ...session.user,
           id: token.sub ?? "",
-          businessSlug: (token["businessSlug"] as string | null) ?? null,
-          subscriptionStatus: (token["subscriptionStatus"] as string) ?? "trial",
+          businessSlug: (token.businessSlug as string | null) ?? null,
+          subscriptionStatus: (token.subscriptionStatus as string) ?? "trial",
         },
       };
     },

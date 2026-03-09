@@ -237,7 +237,7 @@ export const menuRouter = createTRPCRouter({
         with: { menu: { columns: { userId: true } } },
       });
 
-      if (!page || page.menu.userId !== userId) {
+      if (page?.menu.userId !== userId) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
@@ -365,7 +365,7 @@ export const menuRouter = createTRPCRouter({
         with: { menu: { columns: { userId: true } } },
       });
 
-      if (!page || page.menu.userId !== userId) {
+      if (page?.menu.userId !== userId) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 

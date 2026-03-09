@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { FileUploader } from "~/components/menu/file-uploader";
 import { Button } from "~/components/ui/button";
@@ -10,7 +10,6 @@ import { api } from "~/trpc/react";
 
 export default function EditMenuPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const menuId = parseInt(params.id ?? "0", 10);
 
   const {
