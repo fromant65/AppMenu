@@ -212,9 +212,9 @@ export default function EditMenuPage() {
           <h2 className="mb-3 font-semibold text-gray-700">
             Páginas actuales ({menu.pages.length})
           </h2>
-          <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
             {menu.pages.map((page) => (
-              <div key={page.id} className="flex flex-col items-center gap-1">
+              <div key={page.id} className="flex flex-col items-center gap-1.5">
                 <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -222,8 +222,22 @@ export default function EditMenuPage() {
                     alt={`Página ${page.pageNumber}`}
                     className="h-full w-full object-cover"
                   />
+                  {/* Badge de anotaciones */}
+                  {Array.isArray(page.annotations) && page.annotations.length > 0 && (
+                    <div className="absolute right-1 top-1 rounded-full bg-blue-500 px-1.5 py-0.5 text-xs font-bold text-white leading-none">
+                      {page.annotations.length}
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs text-gray-400">Pág. {page.pageNumber}</span>
+                <Link
+                  href={`/dashboard/menus/${menuId}/pagina/${page.id}`}
+                  className="w-full"
+                >
+                  <Button variant="secondary" size="sm" className="w-full text-xs">
+                    Editar precios
+                  </Button>
+                </Link>
               </div>
             ))}
           </div>

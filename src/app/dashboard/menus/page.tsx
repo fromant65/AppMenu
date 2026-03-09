@@ -62,9 +62,23 @@ export default function MenusPage() {
             Administrá tus menús digitales
           </p>
         </div>
-        <Link href="/dashboard/menus/nuevo">
-          <Button>+ Nuevo menú</Button>
-        </Link>
+
+        {/* Botón nuevo: deshabilitado si ya tiene 1 menú */}
+        {(menus?.length ?? 0) >= 1 ? (
+          <div className="group relative">
+            <Button disabled>
+              + Nuevo menú
+            </Button>
+            <div className="pointer-events-none absolute right-0 top-full z-10 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+              Por ahora cada cuenta puede tener un solo menú. Pronto
+              ampliaremos esta funcionalidad.
+            </div>
+          </div>
+        ) : (
+          <Link href="/dashboard/menus/nuevo">
+            <Button>+ Nuevo menú</Button>
+          </Link>
+        )}
       </div>
 
       {/* Estado vacío */}

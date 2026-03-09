@@ -14,6 +14,7 @@ interface PageUploadState {
   status: "pending" | "uploading" | "done" | "error";
   progress?: string;
   imageUrl?: string;
+  sizeBytes: number;
 }
 
 interface FileUploaderProps {
@@ -26,7 +27,8 @@ interface FileUploaderProps {
 // ─── Constantes ─────────────────────────────────────────────────────────────
 
 const ACCEPTED_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
-const MAX_FILE_SIZE_MB = 20;
+/** Límite total de todos los archivos subidos (suma de páginas procesadas) */
+const MAX_TOTAL_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -35,8 +37,10 @@ function isAccepted(file: File) {
 }
 
 function formatSize(bytes: number) {
-  const mb = bytes / 1024 / 1024;
-  return `${mb.toFixed(1)} MB`;
+  if (bytes === 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 // ─── Componente ─────────────────────────────────────────────────────────────
@@ -53,6 +57,7 @@ export function FileUploader({
       previewUrl: p.imageUrl,
       status: "done" as const,
       imageUrl: p.imageUrl,
+      sizeBytes: 0, // tamaño desconocido para páginas ya subidas
     })),
   );
 
@@ -70,20 +75,29 @@ export function FileUploader({
     async (files: File[]) => {
       setGlobalError(null);
 
-      // Validaciones básicas
+      // Validaciones básicas: tipo de archivo
       const validFiles = files.filter((f) => {
         if (!isAccepted(f)) {
           setGlobalError(`Tipo de archivo no soportado: ${f.name}`);
-          return false;
-        }
-        if (f.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-          setGlobalError(`${f.name} supera el límite de ${MAX_FILE_SIZE_MB} MB`);
           return false;
         }
         return true;
       });
 
       if (validFiles.length === 0) return;
+
+      // Validación de tamaño total acumulado (páginas nuevas)
+      const currentNewBytes = pages
+        .filter((p) => p.sizeBytes > 0)
+        .reduce((sum, p) => sum + p.sizeBytes, 0);
+      const incomingBytes = validFiles.reduce((sum, f) => sum + f.size, 0);
+      if (currentNewBytes + incomingBytes > MAX_TOTAL_SIZE_BYTES) {
+        const remaining = MAX_TOTAL_SIZE_BYTES - currentNewBytes;
+        setGlobalError(
+          `Los archivos seleccionados (${formatSize(incomingBytes)}) superan el espacio disponible (${formatSize(remaining)} restantes de ${formatSize(MAX_TOTAL_SIZE_BYTES)} totales).`,
+        );
+        return;
+      }
 
       setIsProcessing(true);
 
@@ -109,7 +123,7 @@ export function FileUploader({
               const pageNumber = nextPage++;
               const previewUrl = URL.createObjectURL(pdfPage.blob);
 
-              // Agregar al estado como "pending"
+              // Agregar al estado como "uploading"
               setPages((prev) => [
                 ...prev,
                 {
@@ -118,6 +132,7 @@ export function FileUploader({
                   previewUrl,
                   status: "uploading",
                   progress: "Subiendo...",
+                  sizeBytes: pdfPage.blob.size,
                 },
               ]);
 
@@ -136,6 +151,7 @@ export function FileUploader({
                 previewUrl,
                 status: "uploading",
                 progress: "Subiendo...",
+                sizeBytes: file.size,
               },
             ]);
 
@@ -227,6 +243,13 @@ export function FileUploader({
     e.target.value = "";
   }
 
+  // ── Calcular totales de peso ─────────────────────────────────────────────
+
+  const totalNewBytes = pages
+    .filter((p) => p.sizeBytes > 0)
+    .reduce((sum, p) => sum + p.sizeBytes, 0);
+  const totalPct = Math.min(100, Math.round((totalNewBytes / MAX_TOTAL_SIZE_BYTES) * 100));
+
   // ── Notificar cuando todas las páginas están subidas ────────────────────
 
   const donwPages = pages.filter((p) => p.status === "done" && p.imageUrl);
@@ -281,7 +304,7 @@ export function FileUploader({
             {isProcessing ? "Procesando..." : "Arrastrá archivos aquí o hacé click"}
           </p>
           <p className="mt-1 text-sm text-gray-500">
-            PDF, PNG, JPG — máx. {MAX_FILE_SIZE_MB} MB por archivo
+            PDF, PNG, JPG — máx. {formatSize(MAX_TOTAL_SIZE_BYTES)} en total
           </p>
         </div>
 
@@ -299,6 +322,33 @@ export function FileUploader({
       {/* Error global */}
       {globalError && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{globalError}</p>
+      )}
+
+      {/* Barra de uso de espacio */}
+      {totalNewBytes > 0 && (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>Espacio usado</span>
+            <span
+              className={totalPct >= 90 ? "font-semibold text-red-600" : ""}
+            >
+              {formatSize(totalNewBytes)} / {formatSize(MAX_TOTAL_SIZE_BYTES)}
+            </span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className={[
+                "h-full rounded-full transition-all",
+                totalPct >= 90
+                  ? "bg-red-500"
+                  : totalPct >= 70
+                    ? "bg-amber-400"
+                    : "bg-blue-500",
+              ].join(" ")}
+              style={{ width: `${totalPct}%` }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Miniaturas de páginas */}
@@ -374,6 +424,9 @@ export function FileUploader({
                   </div>
 
                   <span className="text-xs text-gray-500">Pág. {page.pageNumber}</span>
+                  {page.sizeBytes > 0 && (
+                    <span className="text-xs text-gray-400">{formatSize(page.sizeBytes)}</span>
+                  )}
                 </div>
               ))}
           </div>

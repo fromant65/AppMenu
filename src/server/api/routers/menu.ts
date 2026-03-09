@@ -19,6 +19,20 @@ export const menuRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
+      // Verificar límite de 1 menú por usuario
+      const existingMenus = await ctx.db
+        .select({ id: menus.id })
+        .from(menus)
+        .where(eq(menus.userId, userId));
+
+      if (existingMenus.length >= 1) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "Por ahora cada cuenta puede tener un solo menú. Pronto vamos a ampliar esta funcionalidad.",
+        });
+      }
+
       // Slug único basado en el título
       const existingSlugs = await ctx.db.select({ slug: menus.slug }).from(menus);
       const slugList = existingSlugs.map((r) => r.slug);

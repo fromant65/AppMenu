@@ -16,6 +16,9 @@ export default function NuevoMenuPage() {
   const [titleError, setTitleError] = useState("");
   const [createdMenu, setCreatedMenu] = useState<{ id: number; slug: string } | null>(null);
 
+  const { data: existingMenus, isLoading: checkingMenus } = api.menu.list.useQuery();
+  const hasMenu = (existingMenus?.length ?? 0) >= 1;
+
   const createMenu = api.menu.create.useMutation({
     onSuccess: (menu) => {
       setCreatedMenu(menu);
@@ -48,7 +51,53 @@ export default function NuevoMenuPage() {
   }
 
   // ─── Render ─────────────────────────────────────────────────────────────
+  if (checkingMenus) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      </div>
+    );
+  }
 
+  // Ya tiene un menú: bloquear la creación
+  if (hasMenu && step === "form") {
+    const menu = existingMenus![0]!;
+    return (
+      <div className="mx-auto max-w-lg">
+        <button
+          onClick={() => router.push("/dashboard/menus")}
+          className="mb-6 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver a mis menús
+        </button>
+
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+            <svg className="h-7 w-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-lg font-bold text-gray-900">Ya tenés un menú creado</h2>
+          <p className="mb-6 text-sm text-gray-600">
+            Por ahora cada cuenta puede tener <strong>un solo menú</strong>.
+            Pronto vamos a ampliar esta funcionalidad para que puedas tener más.
+          </p>
+          <div className="flex flex-col items-center gap-3">
+            <Button onClick={() => router.push(`/dashboard/menus/${menu.id}`)}>
+              Editar mi menú actual
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/dashboard/menus")}>
+              Ver mis menús
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="mx-auto max-w-2xl">
       {/* Header */}
